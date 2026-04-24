@@ -45,6 +45,7 @@ export type AccessRequest = {
     _id: string;
     labName?: string;
     labNumber?: string;
+    departmentName?: string;
     assignedAdmins?: Array<{_id: string; fullName: string; username: string}>;
   };
 };

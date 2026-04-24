@@ -14,6 +14,8 @@ export function RequestsTab({requests, requestStatus, isSuperAdmin, isAdmin, onR
   const [filterUser, setFilterUser] = useState<string>('');
   const [filterDept, setFilterDept] = useState<string>('');
 
+  const normalizeDepartmentName = (departmentName: string) => departmentName.trim().toLowerCase();
+
   // Only show admin/super-admin features if user is admin or super-admin
   const showFilters = isSuperAdmin || isAdmin;
 
@@ -42,13 +44,21 @@ export function RequestsTab({requests, requestStatus, isSuperAdmin, isAdmin, onR
   }, [requests]);
 
   const uniqueDepts = useMemo(() => {
-    const depts = new Set<string>();
+    const depts = new Map<string, string>();
+
     requests.forEach((req) => {
-      if (req.lab?.departmentName) {
-        depts.add(req.lab.departmentName);
+      const departmentName = req.lab?.departmentName?.trim();
+      if (!departmentName) return;
+
+      const normalizedDepartmentName = normalizeDepartmentName(departmentName);
+      if (!depts.has(normalizedDepartmentName)) {
+        depts.set(normalizedDepartmentName, departmentName);
       }
     });
-    return Array.from(depts).sort();
+
+    return Array.from(depts.entries())
+      .map(([value, label]) => ({value, label}))
+      .sort((a, b) => a.label.localeCompare(b.label));
   }, [requests]);
 
   // Filter requests based on selected filters
@@ -56,7 +66,7 @@ export function RequestsTab({requests, requestStatus, isSuperAdmin, isAdmin, onR
     return requests.filter((req) => {
       if (filterStatus !== 'all' && req.status !== filterStatus) return false;
       if (filterUser && req.requestedBy?._id !== filterUser) return false;
-      if (filterDept && req.lab?.departmentName !== filterDept) return false;
+      if (filterDept && normalizeDepartmentName(req.lab?.departmentName ?? '') !== filterDept) return false;
       return true;
     });
   }, [requests, filterStatus, filterUser, filterDept]);
@@ -134,8 +144,8 @@ export function RequestsTab({requests, requestStatus, isSuperAdmin, isAdmin, onR
                 >
                   <option value="">All Departments</option>
                   {uniqueDepts.map((dept) => (
-                    <option key={dept} value={dept}>
-                      {dept}
+                    <option key={dept.value} value={dept.value}>
+                      {dept.label}
                     </option>
                   ))}
                 </select>

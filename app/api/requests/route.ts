@@ -32,6 +32,7 @@ export async function GET(request: Request) {
       _id: string;
       labName?: string;
       labNumber?: string;
+      departmentName?: string;
       assignedAdmins?: Array<{_id: string; fullName: string; username: string}>;
     };
   }>>(
@@ -47,7 +48,7 @@ export async function GET(request: Request) {
           reviewNote,
           requestedBy->{_id, fullName, username},
           reviewedBy->{_id, fullName, username},
-          lab->{_id, labName, labNumber, assignedAdmins[]->{_id, fullName, username}}
+          lab->{_id, labName, labNumber, departmentName, assignedAdmins[]->{_id, fullName, username}}
         }`
       : session.role === 'admin'
         ? `*[_type == "accessRequest" && lab._ref in ${assignedLabIds}] | order(requestedAt desc){
@@ -61,7 +62,7 @@ export async function GET(request: Request) {
             reviewNote,
             requestedBy->{_id, fullName, username},
             reviewedBy->{_id, fullName, username},
-            lab->{_id, labName, labNumber, assignedAdmins[]->{_id, fullName, username}}
+            lab->{_id, labName, labNumber, departmentName, assignedAdmins[]->{_id, fullName, username}}
           }`
         : `*[_type == "accessRequest" && requestedBy._ref == ${groqString(session.id)}] | order(requestedAt desc){
             _id,
@@ -74,7 +75,7 @@ export async function GET(request: Request) {
             reviewNote,
             requestedBy->{_id, fullName, username},
             reviewedBy->{_id, fullName, username},
-            lab->{_id, labName, labNumber, assignedAdmins[]->{_id, fullName, username}}
+            lab->{_id, labName, labNumber, departmentName, assignedAdmins[]->{_id, fullName, username}}
           }`,
   );
 

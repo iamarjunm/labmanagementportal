@@ -365,6 +365,49 @@ export default function DashboardPage() {
     }
   }
 
+  async function toggleLabActive(id: string, isActive: boolean) {
+    try {
+      const response = await fetch(`/api/labs/${id}`, {
+        method: 'PATCH',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({isActive}),
+      });
+      if (!response.ok) {
+        const payload = await parseResponse(response);
+        setLabStatus(payload?.error ?? 'Failed to update lab status.');
+        return;
+      }
+      await loadData();
+    } catch {
+      setLabStatus('Failed to update lab status.');
+    }
+  }
+
+  async function bulkSetLabStatus(isActive: boolean) {
+    if (!selectedLabs.length) return;
+    
+    setLabStatus(null);
+    setIsDeletingLabs(true); // Reusing this loading state to disable buttons
+    try {
+      const response = await fetch('/api/labs/bulk-status', {
+        method: 'PATCH',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ids: selectedLabs, isActive}),
+      });
+      const payload = await parseResponse(response);
+      if (!response.ok) {
+        setLabStatus(payload?.error ?? 'Failed to update labs.');
+        return;
+      }
+
+      setSelectedLabs([]);
+      setLabStatus(`Updated ${payload.updated ?? selectedLabs.length} labs.`);
+      await loadData();
+    } finally {
+      setIsDeletingLabs(false);
+    }
+  }
+
   async function createUser(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setUserStatus(null);
@@ -600,6 +643,8 @@ export default function DashboardPage() {
             deleteSelectedLabs={deleteSelectedLabs}
             openLabModal={openLabModal}
             deleteLab={deleteLab}
+            toggleLabActive={toggleLabActive}
+            bulkSetLabStatus={bulkSetLabStatus}
             labStatus={labStatus}
           />
         ) : null}

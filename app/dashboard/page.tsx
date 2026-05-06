@@ -191,6 +191,8 @@ export default function DashboardPage() {
       description: lab.description ?? '',
       websiteUrl: lab.websiteUrl ?? '',
       isActive: lab.isActive ?? true,
+      existingImages: lab.images?.filter(img => img.asset).map((img) => ({assetId: img.asset._id, url: img.asset.url})) ?? [],
+      newFiles: [],
       assignedAdminIds: lab.assignedAdmins?.map((admin) => admin._id) ?? [],
     });
     setRequestDraft({
@@ -275,11 +277,33 @@ export default function DashboardPage() {
     setLabStatus(null);
     setIsSavingLab(true);
     try {
+      const uploadedAssetIds: string[] = [];
+      for (const file of labDraft.newFiles) {
+        const formData = new FormData();
+        formData.append('file', file);
+        const uploadRes = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        if (!uploadRes.ok) {
+          const errPayload = await parseResponse(uploadRes);
+          throw new Error(errPayload?.error || 'Failed to upload image.');
+        }
+        const data = await uploadRes.json();
+        uploadedAssetIds.push(data._id);
+      }
+
+      const allAssetIds = [
+        ...labDraft.existingImages.map((img) => img.assetId),
+        ...uploadedAssetIds,
+      ];
+
       const response = await fetch(`/api/labs/${labModal._id}`, {
         method: 'PATCH',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
           ...labDraft,
+          images: allAssetIds,
           assignedAdminIds: labDraft.assignedAdminIds,
         }),
       });

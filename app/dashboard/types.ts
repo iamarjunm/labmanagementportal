@@ -17,6 +17,7 @@ export type Lab = {
   description?: string;
   websiteUrl?: string;
   isActive?: boolean;
+  images?: Array<{_key?: string; asset: {_id: string; url: string}}>;
   assignedAdmins?: Array<{_id: string; fullName: string; username: string}>;
 };
 
@@ -61,6 +62,8 @@ export type LabDraft = {
   description: string;
   websiteUrl: string;
   isActive: boolean;
+  existingImages: Array<{assetId: string; url: string}>;
+  newFiles: File[];
   assignedAdminIds: string[];
 };
 
@@ -97,6 +100,8 @@ export const emptyLabDraft: LabDraft = {
   description: '',
   websiteUrl: '',
   isActive: true,
+  existingImages: [],
+  newFiles: [],
   assignedAdminIds: [],
 };
 

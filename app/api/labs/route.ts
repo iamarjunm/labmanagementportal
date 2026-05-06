@@ -20,8 +20,9 @@ export async function GET(request: Request) {
     description?: string;
     websiteUrl?: string;
     isActive?: boolean;
+    images?: Array<{_key?: string; asset: {_id: string; url: string}}>;
   }>>(
-    `*[_type == "lab"] | order(orderRank asc, labName asc){_id, srNo, labName, labNumber, locationBuildingName, departmentName, assignedAdmins[]->{_id, fullName, username}, description, websiteUrl, isActive}`,
+    `*[_type == "lab"] | order(orderRank asc, labName asc){_id, srNo, labName, labNumber, locationBuildingName, departmentName, assignedAdmins[]->{_id, fullName, username}, description, websiteUrl, isActive, images[]{_key, asset->{_id, url}}}`,
   );
 
   return NextResponse.json({labs});

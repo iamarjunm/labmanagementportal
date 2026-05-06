@@ -82,6 +82,52 @@ export function LabModal({
                   <span>Description</span>
                   <textarea value={labDraft.description} onChange={(event) => setLabDraft((prev) => ({...prev, description: event.target.value}))} rows={4} className="w-full rounded-2xl border border-slate-200 px-4 py-3" />
                 </label>
+                <div className="space-y-3 md:col-span-2">
+                  <span className="text-sm text-slate-600">Images</span>
+                  {labDraft.existingImages.length > 0 && (
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+                      {labDraft.existingImages.map((img) => (
+                        <div key={img.assetId} className="relative group overflow-hidden rounded-xl border border-slate-200">
+                          <img src={img.url} alt="Lab" className="h-24 w-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => setLabDraft(prev => ({...prev, existingImages: prev.existingImages.filter(i => i.assetId !== img.assetId)}))}
+                            className="absolute right-1 top-1 rounded-full bg-black/50 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/70"
+                          >
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {labDraft.newFiles.length > 0 && (
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 mt-2">
+                      {labDraft.newFiles.map((file, idx) => (
+                        <div key={idx} className="relative group overflow-hidden rounded-xl border border-slate-200">
+                          <img src={URL.createObjectURL(file)} alt="New Lab Image" className="h-24 w-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => setLabDraft(prev => ({...prev, newFiles: prev.newFiles.filter((_, i) => i !== idx)}))}
+                            className="absolute right-1 top-1 rounded-full bg-black/50 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/70"
+                          >
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(event) => {
+                      const files = Array.from(event.target.files || []);
+                      setLabDraft(prev => ({...prev, newFiles: [...prev.newFiles, ...files]}));
+                      event.target.value = '';
+                    }}
+                    className="block w-full text-sm text-slate-500 file:mr-4 file:rounded-xl file:border-0 file:bg-slate-100 file:px-4 file:py-2 file:font-semibold file:text-slate-700 hover:file:bg-slate-200"
+                  />
+                </div>
               </div>
               <label className="flex items-center gap-3 text-sm text-slate-700">
                 <input type="checkbox" checked={labDraft.isActive} onChange={(event) => setLabDraft((prev) => ({...prev, isActive: event.target.checked}))} /> Active

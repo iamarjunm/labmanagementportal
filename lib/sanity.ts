@@ -70,3 +70,26 @@ export function createDocumentId(prefix: string, value: string) {
     .replace(/^-+|-+$/g, '')
     .slice(0, 96);
 }
+
+export async function sanityUploadImage(file: Blob, filename?: string) {
+  const url = new URL(
+    `https://${requireProjectId()}.api.sanity.io/v${apiVersion}/assets/images/${dataset}`,
+  );
+  if (filename) url.searchParams.set('filename', filename);
+
+  const response = await fetch(url.toString(), {
+    method: 'POST',
+    headers: {
+      'Content-Type': file.type,
+      ...(sanityConfig.token ? {Authorization: `Bearer ${sanityConfig.token}`} : {}),
+    },
+    body: file,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Sanity upload failed with status ${response.status}`);
+  }
+
+  const payload = await response.json();
+  return payload.document as {_id: string; url: string};
+}

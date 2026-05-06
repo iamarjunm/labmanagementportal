@@ -12,6 +12,7 @@ type UpdateLabBody = {
   description?: string;
   websiteUrl?: string;
   isActive?: boolean;
+  images?: string[];
 };
 
 export async function PATCH(request: Request, {params}: {params: Promise<{id: string}>}) {
@@ -48,6 +49,15 @@ export async function PATCH(request: Request, {params}: {params: Promise<{id: st
           ...(body.description !== undefined ? {description: body.description || null} : {}),
           ...(body.websiteUrl !== undefined ? {websiteUrl: body.websiteUrl || null} : {}),
           ...(body.isActive !== undefined ? {isActive: body.isActive} : {}),
+          ...(body.images !== undefined ? {
+            images: body.images.filter(Boolean).map((assetId) => ({
+              _type: 'image',
+              asset: {
+                _type: 'reference',
+                _ref: assetId,
+              },
+            })),
+          } : {}),
         },
       },
     },

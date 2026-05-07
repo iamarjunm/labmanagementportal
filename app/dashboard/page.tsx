@@ -38,6 +38,7 @@ export default function DashboardPage() {
   const [requests, setRequests] = useState<AccessRequest[]>([]);
   const [selectedLabs, setSelectedLabs] = useState<string[]>([]);
   const [labModal, setLabModal] = useState<Lab | null>(null);
+  const [labModalMode, setLabModalMode] = useState<'edit' | 'request' | 'view'>('request');
   const [labDraft, setLabDraft] = useState<LabDraft>(emptyLabDraft);
   const [editingUser, setEditingUser] = useState<UserRecord | null>(null);
   const [userDraft, setUserDraft] = useState<UserDraft>(emptyUserDraft);
@@ -180,7 +181,8 @@ export default function DashboardPage() {
     router.replace('/');
   }
 
-  function openLabModal(lab: Lab) {
+  function openLabModal(lab: Lab, mode: 'edit' | 'request' | 'view' = 'request') {
+    setLabModalMode(mode);
     setLabModal(lab);
     setLabDraft({
       srNo: lab.srNo ?? '',
@@ -687,6 +689,7 @@ export default function DashboardPage() {
 
       <LabModal
         labModal={labModal}
+        mode={labModalMode}
         closeLabModal={closeLabModal}
         isSuperAdmin={Boolean(isSuperAdmin)}
         labDraft={labDraft}

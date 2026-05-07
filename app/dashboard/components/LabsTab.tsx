@@ -10,7 +10,7 @@ type LabsTabProps = {
   setSelectedLabs: Dispatch<SetStateAction<string[]>>;
   toggleSelectAllLabs: (selected: boolean) => void;
   deleteSelectedLabs: () => Promise<void>;
-  openLabModal: (lab: Lab) => void;
+  openLabModal: (lab: Lab, mode: 'edit' | 'request' | 'view') => void;
   deleteLab: (id: string) => Promise<void>;
   toggleLabActive: (id: string, isActive: boolean) => Promise<void>;
   bulkSetLabStatus: (isActive: boolean) => Promise<void>;
@@ -87,11 +87,11 @@ export function LabsTab({
           </div>
           <div className="flex flex-wrap gap-2">
             {isManaged ? (
-              <button type="button" className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100" onClick={() => openLabModal(lab)}>
+              <button type="button" className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100" onClick={() => openLabModal(lab, 'view')}>
                 View
               </button>
             ) : lab.isActive !== false ? (
-              <button type="button" className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100" onClick={() => openLabModal(lab)}>
+              <button type="button" className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100" onClick={() => openLabModal(lab, 'request')}>
                 Request Access
               </button>
             ) : (
@@ -101,7 +101,7 @@ export function LabsTab({
             )}
             {isSuperAdmin && (
               <>
-                <button type="button" className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100" onClick={() => openLabModal(lab)}>
+                <button type="button" className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100" onClick={() => openLabModal(lab, 'edit')}>
                   Edit
                 </button>
                 <button type="button" className="rounded-2xl border border-rose-300 px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50" onClick={() => deleteLab(lab._id)}>

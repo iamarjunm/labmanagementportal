@@ -3,6 +3,7 @@ import type {Lab, LabDraft, RequestDraft, UserRecord} from '../types';
 
 type LabModalProps = {
   labModal: Lab | null;
+  mode: 'edit' | 'request' | 'view';
   closeLabModal: () => void;
   isSuperAdmin: boolean;
   labDraft: LabDraft;
@@ -18,6 +19,7 @@ type LabModalProps = {
 
 export function LabModal({
   labModal,
+  mode,
   closeLabModal,
   isSuperAdmin,
   labDraft,
@@ -54,7 +56,7 @@ export function LabModal({
             {labModal.description ? <p className="text-sm leading-7 text-slate-600">{labModal.description}</p> : null}
           </div>
 
-          {isSuperAdmin ? (
+          {mode === 'edit' && isSuperAdmin ? (
             <div className="space-y-4 rounded-2xl border border-slate-200 p-5">
               <h4 className="text-lg font-semibold text-slate-900">Edit lab and assignments</h4>
               <div className="grid gap-4 md:grid-cols-2">
@@ -155,7 +157,7 @@ export function LabModal({
                 <button type="button" className="rounded-2xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700" onClick={closeLabModal}>Cancel</button>
               </div>
             </div>
-          ) : (
+          ) : mode === 'request' ? (
             <div className="space-y-4 rounded-2xl border border-slate-200 p-5">
               <h4 className="text-lg font-semibold text-slate-900">Request access</h4>
               <div className="grid gap-4 md:grid-cols-2">
@@ -176,15 +178,18 @@ export function LabModal({
                   <textarea value={requestDraft.reason} onChange={(event) => setRequestDraft((prev) => ({...prev, reason: event.target.value}))} rows={4} className="w-full rounded-2xl border border-slate-200 px-4 py-3" />
                 </label>
               </div>
-              <div className="flex flex-wrap gap-3">
-                <button type="button" className="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white" onClick={submitRequest}>Send request</button>
+              <div className="flex flex-wrap items-center gap-3">
+                <button type="button" className="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white" onClick={submitRequest}>Submit request</button>
                 <button type="button" className="rounded-2xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700" onClick={closeLabModal}>Cancel</button>
+                {requestStatus ? <p className="text-sm font-medium text-rose-600">{requestStatus}</p> : null}
               </div>
+            </div>
+          ) : (
+            <div className="space-y-4 rounded-2xl border border-slate-200 p-5 flex items-center justify-center bg-slate-50">
+              <p className="text-sm text-slate-500">You are managing this lab. Use the dashboard controls to edit its availability.</p>
             </div>
           )}
         </div>
-
-        {requestStatus ? <p className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">{requestStatus}</p> : null}
       </div>
     </div>
   );

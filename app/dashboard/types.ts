@@ -142,12 +142,32 @@ export function todayString() {
   return new Date().toISOString().slice(0, 10);
 }
 
-export function generateTimeSlots(existingRequests: any[], selectedDate: string, selectedLabId: string): TimeSlot[] {
+function formatTime(date: Date): string {
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  return `${hours}:${minutes}`;
+}
+
+function formatTime12Hour(date: Date): string {
+  let hours = date.getHours();
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours ? hours : 12; // 0 should be 12
+  return `${hours}:${minutes} ${ampm}`;
+}
+
+export function generateTimeSlots(existingRequests: any[] = [], selectedDate: string, selectedLabId: string): TimeSlot[] {
   const slots: TimeSlot[] = [];
   const startHour = 9; // 9:00 AM
   const endHour = 18; // 6:00 PM
   const slotDuration = 50; // 50 minutes
   const breakDuration = 10; // 10 minutes break between slots
+  
+  // Guard against undefined existingRequests
+  if (!existingRequests || !Array.isArray(existingRequests)) {
+    return [];
+  }
   
   // Filter existing requests for the selected date and lab
   const bookedSlots = existingRequests.filter(req => 
@@ -210,19 +230,4 @@ export function generateTimeSlots(existingRequests: any[], selectedDate: string,
   }
   
   return slots;
-}
-
-function formatTime(date: Date): string {
-  const hours = date.getHours().toString().padStart(2, '0');
-  const minutes = date.getMinutes().toString().padStart(2, '0');
-  return `${hours}:${minutes}`;
-}
-
-function formatTime12Hour(date: Date): string {
-  let hours = date.getHours();
-  const minutes = date.getMinutes().toString().padStart(2, '0');
-  const ampm = hours >= 12 ? 'PM' : 'AM';
-  hours = hours % 12;
-  hours = hours ? hours : 12; // 0 should be 12
-  return `${hours}:${minutes} ${ampm}`;
 }

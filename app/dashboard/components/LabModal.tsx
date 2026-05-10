@@ -1,5 +1,7 @@
+import {useMemo, useState} from 'react';
 import type {Dispatch, SetStateAction} from 'react';
-import type {Lab, LabDraft, RequestDraft, UserRecord} from '../types';
+import type {Lab, LabDraft, RequestDraft, UserRecord, TimeSlot} from '../types';
+import {generateTimeSlots} from '../types';
 
 type LabModalProps = {
   labModal: Lab | null;
@@ -15,6 +17,7 @@ type LabModalProps = {
   setRequestDraft: Dispatch<SetStateAction<RequestDraft>>;
   submitRequest: () => Promise<void>;
   requestStatus: string | null;
+  allRequests: any[];
 };
 
 export function LabModal({
@@ -31,8 +34,28 @@ export function LabModal({
   setRequestDraft,
   submitRequest,
   requestStatus,
+  allRequests,
 }: LabModalProps) {
   if (!labModal) return null;
+
+  // Generate time slots based on existing requests
+  const timeSlots = useMemo(() => {
+    if (!requestDraft.requestDate || !requestDraft.labId) return [];
+    return generateTimeSlots(allRequests, requestDraft.requestDate, requestDraft.labId);
+  }, [allRequests, requestDraft.requestDate, requestDraft.labId]);
+
+  // Check if currently selected slot is actually available
+  const isCurrentSlotAvailable = useMemo(() => {
+    if (!requestDraft.startTime || !requestDraft.endTime) return false;
+    const selectedSlot = timeSlots.find(slot => 
+      slot.startTime === requestDraft.startTime && 
+      slot.endTime === requestDraft.endTime
+    );
+    return selectedSlot ? !selectedSlot.isBooked : false;
+  }, [timeSlots, requestDraft.startTime, requestDraft.endTime]);
+
+  // State for showing booked slot details
+  const [selectedBookedSlot, setSelectedBookedSlot] = useState<TimeSlot | null>(null);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6">
@@ -163,25 +186,106 @@ export function LabModal({
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="space-y-2 text-sm text-slate-600">
                   <span>Date</span>
-                  <input type="date" value={requestDraft.requestDate} onChange={(event) => setRequestDraft((prev) => ({...prev, requestDate: event.target.value}))} className="w-full rounded-2xl border border-slate-200 px-4 py-3" />
+                  <input 
+                    type="date" 
+                    value={requestDraft.requestDate} 
+                    onChange={(event) => {
+                      setRequestDraft((prev) => ({...prev, requestDate: event.target.value, startTime: '', endTime: ''}));
+                    }} 
+                    className="w-full rounded-2xl border border-slate-200 px-4 py-3" 
+                    min={new Date().toISOString().split('T')[0]}
+                  />
                 </label>
-                <label className="space-y-2 text-sm text-slate-600">
-                  <span>Start Time</span>
-                  <input type="time" value={requestDraft.startTime} onChange={(event) => setRequestDraft((prev) => ({...prev, startTime: event.target.value}))} className="w-full rounded-2xl border border-slate-200 px-4 py-3" />
-                </label>
-                <label className="space-y-2 text-sm text-slate-600">
-                  <span>End Time</span>
-                  <input type="time" value={requestDraft.endTime} onChange={(event) => setRequestDraft((prev) => ({...prev, endTime: event.target.value}))} className="w-full rounded-2xl border border-slate-200 px-4 py-3" />
-                </label>
-                <label className="space-y-2 text-sm text-slate-600 md:col-span-2">
-                  <span>Reason</span>
-                  <textarea value={requestDraft.reason} onChange={(event) => setRequestDraft((prev) => ({...prev, reason: event.target.value}))} rows={4} className="w-full rounded-2xl border border-slate-200 px-4 py-3" />
-                </label>
+                <div className="space-y-2 text-sm text-slate-600">
+                  <span>Time Slot</span>
+                  <div className="text-xs text-slate-500">Select a 50-minute slot (9:00 AM - 6:00 PM)</div>
+                </div>
               </div>
+              
+              {/* Time Slots Grid */}
+              {requestDraft.requestDate && requestDraft.labId ? (
+                <div className="space-y-3">
+                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    {timeSlots.map((slot) => (
+                      <button
+                        key={slot.id}
+                        type="button"
+                        onClick={() => {
+                          if (!slot.isBooked) {
+                            setRequestDraft((prev) => ({
+                              ...prev,
+                              startTime: slot.startTime,
+                              endTime: slot.endTime
+                            }));
+                          } else {
+                            // Show who booked this slot
+                            setSelectedBookedSlot(slot);
+                          }
+                        }}
+                        className={`p-3 rounded-xl border text-sm font-medium transition-all ${
+                          slot.isBooked
+                            ? 'bg-gray-100 border-gray-300 text-gray-500 hover:bg-gray-200 cursor-pointer'
+                            : requestDraft.startTime === slot.startTime
+                            ? 'bg-emerald-600 border-emerald-600 text-white'
+                            : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-emerald-300'
+                        }`}
+                      >
+                        <div className="font-semibold">{slot.displayText}</div>
+                        {slot.isBooked && (
+                          <div className="text-xs mt-1 text-gray-400">Booked</div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  {timeSlots.length === 0 && (
+                    <div className="text-center text-sm text-slate-500 py-4">
+                      No time slots available. Please select a different date.
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center text-sm text-slate-500 py-8 border-2 border-dashed border-slate-200 rounded-xl">
+                  Please select a date first to view available time slots
+                </div>
+              )}
+
+              {/* Selected Slot Display */}
+              {requestDraft.startTime && requestDraft.endTime && (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
+                  <div className="text-sm font-medium text-emerald-800">
+                    Selected Time: {timeSlots.find(s => s.startTime === requestDraft.startTime)?.displayText || 'Unknown slot'}
+                  </div>
+                </div>
+              )}
+
+              <label className="space-y-2 text-sm text-slate-600">
+                <span>Reason</span>
+                <textarea 
+                  value={requestDraft.reason} 
+                  onChange={(event) => setRequestDraft((prev) => ({...prev, reason: event.target.value}))} 
+                  rows={4} 
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-3" 
+                  placeholder="Please provide a reason for requesting lab access..."
+                />
+              </label>
               <div className="flex flex-wrap items-center gap-3">
-                <button type="button" className="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white" onClick={submitRequest}>Submit request</button>
+                <button 
+                  type="button" 
+                  className={`rounded-2xl px-4 py-3 text-sm font-semibold transition-all ${
+                    !isCurrentSlotAvailable || !requestDraft.reason
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                      : 'bg-slate-900 text-white hover:bg-slate-800'
+                  }`} 
+                  onClick={submitRequest}
+                  disabled={!isCurrentSlotAvailable || !requestDraft.reason}
+                >
+                  Submit request
+                </button>
                 <button type="button" className="rounded-2xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700" onClick={closeLabModal}>Cancel</button>
                 {requestStatus ? <p className="text-sm font-medium text-rose-600">{requestStatus}</p> : null}
+                {!isCurrentSlotAvailable && requestDraft.startTime && (
+                  <p className="text-sm font-medium text-amber-600">Selected slot is no longer available. Please choose another slot.</p>
+                )}
               </div>
             </div>
           ) : (
@@ -191,6 +295,50 @@ export function LabModal({
           )}
         </div>
       </div>
+
+      {/* Booked Slot Details Modal */}
+      {selectedBookedSlot && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+            <div className="flex items-start justify-between gap-4 mb-4">
+              <h3 className="text-lg font-semibold text-slate-900">Slot Information</h3>
+              <button 
+                className="text-sm font-semibold text-slate-500 hover:text-slate-700" 
+                onClick={() => setSelectedBookedSlot(null)}
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                <div className="text-sm font-medium text-amber-800 mb-1">Time Slot</div>
+                <div className="font-semibold text-amber-900">{selectedBookedSlot.displayText}</div>
+              </div>
+              
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                <div className="text-sm font-medium text-red-800 mb-1">Status</div>
+                <div className="font-semibold text-red-900">Already Booked</div>
+                <div className="text-sm text-red-700 mt-1">
+                  by {selectedBookedSlot.bookedBy || 'Unknown user'}
+                </div>
+              </div>
+              
+              <div className="text-sm text-slate-600">
+                This time slot is not available. Please select a different time slot.
+              </div>
+              
+              <button 
+                type="button"
+                className="w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800"
+                onClick={() => setSelectedBookedSlot(null)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

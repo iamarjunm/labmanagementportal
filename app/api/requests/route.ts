@@ -93,6 +93,39 @@ export async function POST(request: Request) {
     return NextResponse.json({error: 'Lab, request date, start time, end time, and reason are required.'}, {status: 400});
   }
 
+  // Check for existing bookings that overlap with the requested time slot
+  const existingRequests = await sanityQuery<Array<{
+    _id: string;
+    startTime: string;
+    endTime: string;
+    status: 'pending' | 'approved' | 'rejected';
+    lab?: {_id: string};
+    requestDate: string;
+  }>>(
+    `*[_type == "accessRequest" && lab._ref == ${groqString(body.labId)} && requestDate == ${groqString(body.requestDate)} && status in ["pending", "approved"]]{
+      _id,
+      startTime,
+      endTime,
+      status,
+      lab->{_id},
+      requestDate
+    }`
+  );
+
+  // Check for overlaps
+  const requestedStart = new Date(body.startTime);
+  const requestedEnd = new Date(body.endTime);
+  
+  const hasOverlap = existingRequests.some(req => {
+    const reqStart = new Date(req.startTime);
+    const reqEnd = new Date(req.endTime);
+    return (requestedStart < reqEnd && requestedEnd > reqStart);
+  });
+
+  if (hasOverlap) {
+    return NextResponse.json({error: 'This time slot is already booked. Please select a different time.'}, {status: 409});
+  }
+
   await sanityMutate([
     {
       create: {

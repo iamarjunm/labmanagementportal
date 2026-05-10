@@ -701,6 +701,7 @@ export default function DashboardPage() {
         setRequestDraft={setRequestDraft}
         submitRequest={submitRequest}
         requestStatus={requestStatus}
+        allRequests={requests}
       />
 
       <UserModal
